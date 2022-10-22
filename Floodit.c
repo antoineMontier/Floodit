@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include<unistd.h>
 
 // "constantes"
 #define TAILLE 12
@@ -92,8 +95,8 @@ void afficheGrille (ColorCode ** M, int n){
 void randomGrille (ColorCode ** M, int n, int m){
   srand(clock());
   for(int i = 0 ; i < n ; i++){
-    for(int j = 0 ; j < m ; j++){
-      M[i][j] = (int)rand() % MAX_COLORS;
+    for(int j = 0 ; j < n ; j++){
+      M[i][j] = (int)rand() % m;
     }
   }
 }
@@ -152,10 +155,11 @@ void propagate (ColorCode ** M, int n, ColorCode c){    //colorier en c toutes l
 
 
 
-//        taille     larg        nbessais max
+//        taille     couleurs       nbessais max
 void play (int t, int nb_col, int n){
   ColorCode ** G;
-  int res = -1;
+  int res = -2;
+  int ancienRes = -2;
 
   // initialisation
   G = creeGrille (t);
@@ -165,24 +169,91 @@ void play (int t, int nb_col, int n){
 
   // debut des interactions
   for (int i = 0; i < n; ++i){
-    for(int k = 0 ; K < MAX_COLORS ; k++){
-      afficheCouleur(WHITE, k, k);
+    
+    char c = '0';
+    printf("\n");
+    for(int k = 0 ; k < MAX_COLORS ; k++){
+      afficheCouleur(MAX_COLORS - k-1, k, c);
+      c++;
+      printf(" ");
     }
+    printf("exit : -1 // il reste %d essai(s)\n", n-i);
     do{
+      
       scanf("%d", &res);
-    }while(res < 0 || res <= MAX_COLORS);
+    }while(res < -1 || res >= MAX_COLORS);
 
+    if (res == -1){
+      printf("Bye!\n");
+      return;
+    }
+    //if(res != ancienRes)
+      propagate(G, t, res);
+    
+    afficheGrille(G, t);
+    ancienRes = res;
+
+
+    if (isFlooded(G,t)){
+      printf("GAGNE!\n");
+      return;
+    }
+  }
+}
+  
+  
+  
+  void botPlay(int t, int nb_col, int n){
+  ColorCode ** G;
+  int res = 0;
+  int ancienRes = 0;
+
+
+  // initialisation
+  G = creeGrille (t);
+  randomGrille (G, t, nb_col);
+  afficheGrille (G, t);
+
+
+  // debut des interactions
+  for (int i = 0; i < n; ++i){
+    
+    
+    //afficher les controles
+    char c = '0';
+    printf("\n");
+    for(int k = 0 ; k < MAX_COLORS ; k++){
+      afficheCouleur(MAX_COLORS - k-1, k, c);
+      c++;
+      printf(" ");
+    }
+    
+    
+    
+    printf("exit : -1 // il reste %d essai(s)\n", n-i);
+    
+    res = rand() % (MAX_COLORS);
+    
+    printf("couleure %d \n", res);
+  
+    //sleep(1);   
+    
+
+    if(res != ancienRes)
+      propagate(G, t, res);
+    
+
+    afficheGrille(G, t);
+    ancienRes = res;
+
+    if (isFlooded(G,t)){
+      printf("GAGNE!\n");
+      return;
+    }
 
   }
-  //plus dinteraction
-
-  // resultats
-  if (res == -1)
-    printf("Bye!\n");
-  else if (isFlooded(G,t))
-    printf("GAGNE!\n");
-  else
-    printf("PERDU!\n");
+  
+  printf("PERDU!\n");
 
   // desallocation memoire
   detruitGrille(&G, t);
@@ -192,27 +263,11 @@ void play (int t, int nb_col, int n){
 
 int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit && ./floodit */
 
-  //play(TAILLE, NB_COLORS, NB_ESSAIS);
-  printf("\n\n\n");
 
-  ColorCode **G = creeGrille(TAILLE);
+  botPlay(TAILLE, NB_COLORS, NB_ESSAIS);
+  
+ //play(TAILLE, NB_COLORS, NB_ESSAIS);
 
-  randomGrille(G, TAILLE, TAILLE);
-
-  afficheGrille(G, TAILLE);
-
-  propagate (G, TAILLE, BLUE);
-
-  printf("\n\n\n");
-
-
-  afficheGrille(G, TAILLE);
-
-
-  detruitGrille(&G, TAILLE);
-
-
-  printf("\n\n\n");
 
 
 
