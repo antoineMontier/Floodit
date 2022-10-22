@@ -27,6 +27,8 @@ int isFlooded (ColorCode **, int);                                        // OK 
 void propagate (ColorCode **, int, ColorCode);                            // OK
 void propagate_rec (ColorCode **, int, ColorCode, ColorCode, int, int);   // OK
 void play (int, int, int);                                                // A TERMINER
+void connexions(ColorCode ** ,ColorCode ** , int );
+void controle_rec(ColorCode ** ,ColorCode ** , int , ColorCode , int , int);
 
 
 
@@ -165,6 +167,11 @@ void play (int t, int nb_col, int n){
   G = creeGrille (t);
   randomGrille (G, t, nb_col);
   afficheGrille (G, t);
+  
+  ColorCode **ctrl = creeGrille(t);
+  connexions(ctrl, G,  t);
+
+
 
 
   // debut des interactions
@@ -172,27 +179,40 @@ void play (int t, int nb_col, int n){
     
     char c = '0';
     printf("\n");
+    
+    
     for(int k = 0 ; k < MAX_COLORS ; k++){
       afficheCouleur(MAX_COLORS - k-1, k, c);
       c++;
       printf(" ");
     }
     printf("exit : -1 // il reste %d essai(s)\n", n-i);
+    
+    
     do{
-      
       scanf("%d", &res);
     }while(res < -1 || res >= MAX_COLORS);
+
+
 
     if (res == -1){
       printf("Bye!\n");
       return;
     }
-    //if(res != ancienRes)
-      propagate(G, t, res);
+    
+    
+     
+    
+    
+    propagate(G, t, res);
+    connexions(ctrl, G,  t);
     
     afficheGrille(G, t);
+    //printf("\n===================================================\n");
+   // afficheGrille(ctrl, t);
+    
+    
     ancienRes = res;
-
 
     if (isFlooded(G,t)){
       printf("GAGNE!\n");
@@ -200,6 +220,160 @@ void play (int t, int nb_col, int n){
     }
   }
 }
+  
+  
+  
+  void connexions(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
+    
+     for(int a = 0 ; a< taille ;a++){
+      for(int b = 0 ; b < taille ; b++){
+        Mcontrole[a][b] = 0;
+      }
+    }
+    
+    ColorCode couleurr = GrilleJeu[0][0];
+    controle_rec(Mcontrole, GrilleJeu, taille, couleurr, 0, 0);
+    
+  }
+
+  void controle_rec(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille, ColorCode couleurr, int ligne, int colonne){
+    
+    if(GrilleJeu[ligne][colonne] != couleurr )
+      return;
+      
+    else{
+      
+        Mcontrole[ligne][colonne] = 1;
+        //printf("case (%d, %d) sous controle\n", ligne, colonne);
+  
+        //haut :
+        if(ligne != 0 && Mcontrole[ligne-1][colonne] == 0)
+          controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne-1, colonne);
+  
+        //bas :
+        if(ligne != taille-1 && Mcontrole[ligne+1][colonne] == 0)
+          controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne+1, colonne);
+  
+        //gauche :
+        if(colonne != 0 && Mcontrole[ligne][colonne-1] == 0)
+          controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne-1);
+  
+        //droite :
+        if(colonne != taille-1 && Mcontrole[ligne][colonne+1] == 0)
+          controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne+1);
+    }
+}
+  
+  
+  
+  
+  /*
+  
+  int * t nbcouleursAdj(ColorCode ** M, int taille, int nb_col){
+    
+    int * res = malloc(nb_col*sizeof(int));//allouer le tableau résultat
+    
+    for(int i = 0 ; i < nb_col ; i++){//initialiser le tableau résultat
+      res[i] = 0;
+    }
+    
+    
+    //allouer la matrice booléenne de cases visités : 
+    int ** P = creeGrille(taille);
+    
+    //allouer la matrice booléenne de cases connectées à celle en haut à gauche : 
+    int ** C = creeGrille(taille);
+    
+    
+    //le robot commence en haut à gauche
+    int x = 0;//absice robot
+    int y = 0;//ordonnée robot
+    ColorCode c = M[0][0];//couleure du robot
+    P[0][0] = 1; // la case en haut à gauche est considérée comme visitée;
+    
+    int toutEstVisite = 0;//variable booléenne pour savoir si toutes les cases ont étés visitées
+    
+    int depl = 0;
+    
+    while(!toutEstVisite){
+      
+      depl = 0;
+      
+      //enregistrer les cases aux 4 coins : 
+      
+      if(y != 0 && P[y-1][x] == 0)//haut
+        res(M[y-1][x]) += 1; //incrémenter la couleure présente
+        
+      if(x != taille-1 && P[y][x+1] == 0)//droite
+        res(M[y][x+1]) += 1; //incrémenter la couleure présente
+        
+      if(y != taille -1 && P[y+1][x] == 0)//bas
+        res(M[y+1][x]) += 1; //incrémenter la couleure présente
+        
+      if(x != 0 && P[y][x-1] == 0)//gauche
+        res(M[y][x-1]) += 1; //incrémenter la couleure présente
+      
+      
+      //déplacer le bot sur une case non visitée, de même couleure :
+      
+      if(y != 0 && P[y-1][x] == 0 && M[y-1][x] == c && !depl){//haut
+        y = y-1;
+        depl = 1;//la variable deplacement deviens vraie pour ce tour
+      }
+      if(x != taille-1 && P[y][x+1] == 0 && M[y][x+1] == c && !depl){//droite
+        x = x+1;
+        depl = 1;//la variable deplacement deviens vraie pour ce tour
+      }
+      if(y != taille -1 && P[y+1][x] == 0 && M[y+1][x] == c && !depl){//bas
+        y = y+1;
+        depl = 1;//la variable deplacement deviens vraie pour ce tour
+      }
+      if(x != 0 && P[y][x-1] == 0 && M[y][x-1] == c && !depl){//gauche
+        x = x+1;  
+        depl = 1;//la variable deplacement deviens vraie pour ce tour
+      }
+      
+      
+      
+      if(!depl){//si le robot n'a pas été déplacé : il faut le faire démarrer d'un nouveau pt de départ non visité mais sur lequel on a le controle
+        
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    }
+    
+    
+    
+    detruitGrille(&P, taille);
+    
+  }
+  
+  
+  */
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -232,7 +406,7 @@ void play (int t, int nb_col, int n){
     
     printf("exit : -1 // il reste %d essai(s)\n", n-i);
     
-    res = rand() % (MAX_COLORS);
+    res = (res + 1) % (MAX_COLORS);
     
     printf("couleure %d \n", res);
   
@@ -261,12 +435,31 @@ void play (int t, int nb_col, int n){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit && ./floodit */
 
 
-  botPlay(TAILLE, NB_COLORS, NB_ESSAIS);
+  //botPlay(TAILLE, NB_COLORS, NB_ESSAIS);
   
- //play(TAILLE, NB_COLORS, NB_ESSAIS);
+ play(TAILLE, NB_COLORS, NB_ESSAIS);
 
 
 
