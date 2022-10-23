@@ -713,7 +713,7 @@ void playVSbot(int t, int nb_col, int n){
       printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
       afficheGrille(Gplay, t);
 
-      printf("le robot a gagné ! il vous restait %d cases\n", nbCasesCtrlPlay);
+      printf("le robot a gagné ! il vous restait %d cases\n",t*t- nbCasesCtrlPlay);
       detruitGrille(&Gplay, t);
       detruitGrille(&ctrl, t);
       detruitGrille(&Gbot, t);
@@ -726,7 +726,7 @@ void playVSbot(int t, int nb_col, int n){
       printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
       afficheGrille(Gplay, t);
 
-      printf("vous avez gagné ! il restait %d cases au robot\n", nbCasesCtrlBot);
+      printf("vous avez gagné ! il restait %d cases au robot\n", t*t-nbCasesCtrlBot);
       detruitGrille(&Gplay, t);
       detruitGrille(&ctrl, t);
       detruitGrille(&Gbot, t);
@@ -742,7 +742,7 @@ void playVSbot(int t, int nb_col, int n){
     printf("\n\nVotre grille :\n"); //afficher les 2 grilles
     afficheGrille(Gplay, t);
     
-    printf("Game over :\n\nil vous restait %d cases et il restait %d cases au robot",nbCasesCtrlPlay,nbCasesCtrlBot);
+    printf("Game over :\n\nil vous restait %d cases et il restait %d cases au robot",t*t-nbCasesCtrlPlay,t*t-nbCasesCtrlBot);
     if(rapport > 1)
       printf(" par élémination le robot gagne ! \n");
     else if(rapport < 1)
@@ -782,7 +782,7 @@ int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit &&
   
   //play(TAILLE, NB_COLORS, NB_ESSAIS);
 
-  playVSbot(25, 4, 50);
+  playVSbot(20, 4, 50);
 
 
   return 0;
