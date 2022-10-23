@@ -32,6 +32,8 @@ void controle_rec(ColorCode ** ,ColorCode ** , int , ColorCode , int , int);
 void frontieres(ColorCode **, ColorCode **, int );
 int* nbCouleurAnnexables(ColorCode** , int , int );
 int maximum(int *, int );
+void playVSbot(int , int , int );
+int nbCasesSousControle(ColorCode**, int, int);
 
 
 // implementations    symbol  background  lettre
@@ -206,6 +208,8 @@ void play (int t, int nb_col, int n){
 
     if (res == -1){
       printf("Bye!\n");
+      detruitGrille(&G, t);
+      detruitGrille(&ctrl, t);
       return;
     }
     
@@ -237,21 +241,38 @@ void play (int t, int nb_col, int n){
 
     if (isFlooded(G,t)){
       printf("GAGNE!\n");
+      detruitGrille(&G, t);
+      detruitGrille(&ctrl, t);
       return;
     }
   }
+  printf("perdu :(\n");
+  detruitGrille(&G, t);
+  detruitGrille(&ctrl, t);
 }
   
-  
+  int nbCasesSousControle(ColorCode**G, int t, int n){
+    ColorCode ** co = creeGrille(t, -1);
+    connexions(co, G, t, 0, 0);
+    
+    int r = 0;
+    
+    for(int a = 0 ; a< t ;a++){
+      for(int b = 0 ; b < t ; b++){//reset grille connexions
+        if(co[a][b] != -1){
+          r++;
+        }
+      }
+    }
+    detruitGrille(&co, t);
+    return r;
+  }
   
   void connexions(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille, int ligne, int colonne){
-    
-     
-    
     ColorCode couleurr = GrilleJeu[ligne][colonne];
     controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne);
-    
   }
+  
 
   void controle_rec(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille, ColorCode couleurr, int ligne, int colonne){
     
@@ -342,6 +363,7 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
       }
     }
     //ici la matrice de controle affiche toutes les cases annexables en jouant leur couleur !
+    detruitGrille(&comptee, taille);
   }
   
   int* nbCouleurAnnexables(ColorCode** Mcontrole, int taille, int nb_couleurs){
@@ -485,16 +507,6 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void botPlay(int t, int nb_col, int n){
   ColorCode ** G;
   int couleurselectionnee = 0;
@@ -577,11 +589,174 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
 
   // desallocation memoire
   detruitGrille(&G, t);
+    detruitGrille(&ctrl, t);
+
 }
 
 
 
+void playVSbot(int t, int nb_col, int n){
+  
+  
+  //joueur :
+  ColorCode**Gplay = creeGrille(t, 0);//créer la grille du joueur
+  randomGrille(Gplay, t, nb_col);//avoir une grille aléatoire pour le joueur
+  int couleurJoueur = -2;
+  int ancienneCouleurJoueur = -2;
+  int nbCasesCtrlPlay = 0;
+  
+  
+  //robot :
+  ColorCode**Gbot = creeGrille(t, 0);//créer la grille du robot
+  for(int i = 0; i < t; i++){
+    for(int j = 0 ; j < t; j++){//mettre la même grille pour le robot
+      Gbot[i][j] = Gplay[i][j];
+    }
+  }
+  int couleurBot;
+  ColorCode **ctrl = creeGrille(t, -1);
+  int nbCasesCtrlBot = 0;
+  
+  double rapport = 0;
+  //ici, il y a deux grilles différentes mais avec le même contenu
+  
+  
+  
+  
+  
+  
+  
+  // debut des interactions
+  for (int tour = 0; tour < n; tour++){
+    
+    nbCasesCtrlBot = nbCasesSousControle(Gbot, t, nb_col);
+    nbCasesCtrlPlay = nbCasesSousControle(Gplay, t, nb_col);
+    rapport = (nbCasesCtrlBot - nbCasesCtrlPlay)/(double)nbCasesCtrlPlay;
+    
+    printf("Grille du robot (%d cases sous contrôle) :\n", nbCasesCtrlBot);
+    afficheGrille(Gbot, t);
+    
+    if(rapport > 0){
+      printf("\n\nles résultat du robot sont %.2f fois mieux que les votre", rapport);
+    }else if(rapport < 0){
+      printf("\n\nles résultat du robot sont %.2f fois moins bons que les votre", -rapport);
+    }else
+      printf("\n\nvos résultats sont identiques au robot");
+    
+    printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
+    afficheGrille(Gplay, t);
 
+    
+    //afficher les controles
+    char c = '0';
+    printf("\n");
+    afficheCouleur(WHITE, 0, c);
+    c++;
+    printf(" ");
+    for(int k = 1 ; k < nb_col ; k++){
+      afficheCouleur(0, k, c);
+      c++;
+      printf(" ");
+    }
+    printf("exit : -1 // il reste %d essai(s)\n", n-tour);
+    
+    
+    //joueur entre sa couleure :
+    printf("entrez votre code couleure : ");
+    do{
+      scanf("%d", &couleurJoueur);
+    }while(couleurJoueur < -1 || couleurJoueur >= nb_col);
+    
+     if(couleurJoueur == -1){
+      printf("Bye!\n");
+      detruitGrille(&Gplay, t);
+      detruitGrille(&ctrl, t);
+      detruitGrille(&Gbot, t);
+      return;
+    }
+    
+    //grille du joueur propagée :
+    if(couleurJoueur != ancienneCouleurJoueur){
+      propagate(Gplay, t, couleurJoueur);
+      ancienneCouleurJoueur = couleurJoueur;
+    }
+    
+    
+    //robot fait son choix
+    connexions(ctrl, Gbot,  t, 0, 0);
+    frontieres(ctrl, Gbot, t);
+    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);// le robot crée ses grilles intelligentes
+    couleurBot = maximum(annexables, nb_col);
+    
+    printf("\nle robot joue : %d\n\n========================================\n\n", couleurBot);
+    propagate(Gbot, t, couleurBot);
+    
+    
+    if(isFlooded(Gbot, t) && isFlooded(Gplay, t)){
+      printf("Grille du robot (%d cases sous contrôle) :\n", nbCasesCtrlBot);
+      afficheGrille(Gbot, t);
+      printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
+      afficheGrille(Gplay, t);
+
+      printf("égalité !\n");
+      detruitGrille(&Gplay, t);
+      detruitGrille(&ctrl, t);
+      detruitGrille(&Gbot, t);
+      return;
+    }
+    
+    
+    
+    if(isFlooded(Gbot, t)){
+      printf("Grille du robot (%d cases sous contrôle) :\n", nbCasesCtrlBot);
+      afficheGrille(Gbot, t);
+      printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
+      afficheGrille(Gplay, t);
+
+      printf("le robot a gagné ! il vous restait %d cases\n", nbCasesCtrlPlay);
+      detruitGrille(&Gplay, t);
+      detruitGrille(&ctrl, t);
+      detruitGrille(&Gbot, t);
+      return;
+    }
+    
+    if(isFlooded(Gplay, t)){
+      printf("Grille du robot (%d cases sous contrôle) :\n", nbCasesCtrlBot);
+      afficheGrille(Gbot, t);
+      printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
+      afficheGrille(Gplay, t);
+
+      printf("vous avez gagné ! il restait %d cases au robot\n", nbCasesCtrlBot);
+      detruitGrille(&Gplay, t);
+      detruitGrille(&ctrl, t);
+      detruitGrille(&Gbot, t);
+      return;
+    }
+    
+    
+    
+  }
+  
+    printf("Grille du robot :\n");
+    afficheGrille(Gbot, t);
+    printf("\n\nVotre grille :\n"); //afficher les 2 grilles
+    afficheGrille(Gplay, t);
+    
+    printf("Game over :\n\nil vous restait %d cases et il restait %d cases au robot",nbCasesCtrlPlay,nbCasesCtrlBot);
+    if(rapport > 1)
+      printf(" par élémination le robot gagne ! \n");
+    else if(rapport < 1)
+      printf(" vous gagnez par élémination ! \n");
+    else
+      printf(" égalité pure !");
+    
+
+
+  
+  detruitGrille(&Gplay, t);
+  detruitGrille(&ctrl, t);
+  detruitGrille(&Gbot, t);
+}
 
 
 
@@ -605,9 +780,9 @@ int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit &&
 
   //botPlay(TAILLE, NB_COLORS, NB_ESSAIS);
   
-  play(TAILLE, NB_COLORS, NB_ESSAIS);
+  //play(TAILLE, NB_COLORS, NB_ESSAIS);
 
-
+  playVSbot(25, 4, 50);
 
 
   return 0;
