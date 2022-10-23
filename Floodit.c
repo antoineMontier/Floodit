@@ -18,7 +18,7 @@
 typedef enum {BLACK = 0, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, MAX_COLORS} ColorCode;
 
 // prototypes
-ColorCode ** creeGrille (int);                                            // A TESTER
+ColorCode ** creeGrille (int, int);                                       // A TESTER
 void detruitGrille (ColorCode ***, int);                                  // OK
 void afficheCouleur (int, int, char);                                     // OK
 void afficheGrille (ColorCode **, int);                                   // OK
@@ -27,7 +27,7 @@ int isFlooded (ColorCode **, int);                                        // OK 
 void propagate (ColorCode **, int, ColorCode);                            // OK
 void propagate_rec (ColorCode **, int, ColorCode, ColorCode, int, int);   // OK
 void play (int, int, int);                                                // A TERMINER
-void connexions(ColorCode ** ,ColorCode ** , int );
+void connexions(ColorCode ** ,ColorCode ** , int , int, int);
 void controle_rec(ColorCode ** ,ColorCode ** , int , ColorCode , int , int);
 
 
@@ -38,7 +38,7 @@ void afficheCouleur (int fg, int bg, char c){
 }
 
 
-ColorCode ** creeGrille(int n){//n est la taille de la matrice (n*n)
+ColorCode ** creeGrille(int n, int val){//n est la taille de la matrice (n*n)
 
 //creer le tableau de pointeurs
   ColorCode ** M;
@@ -52,7 +52,7 @@ ColorCode ** creeGrille(int n){//n est la taille de la matrice (n*n)
 //initialiser chaque ligne
   for(int i = 0 ; i <= n ; i++){
     for(int j = 0 ; j <= n ; j++){
-      M[i][j] = 0;
+      M[i][j] = val;
     }
   }
   return M;
@@ -83,8 +83,10 @@ void afficheGrille (ColorCode ** M, int n){
 
   for(int i = 0 ; i < n ; i ++){
     for(int j = 0 ; j < n ; j ++){
-    //  printf("| %d ", M[i][j]);
-      afficheCouleur (M[i][j], M[i][j], ' ');
+   //   printf("| %d ", M[i][j]);
+
+        afficheCouleur (M[i][j], M[i][j], ' ');
+
     }
     printf("\n");
 
@@ -164,12 +166,19 @@ void play (int t, int nb_col, int n){
   int ancienRes = -2;
 
   // initialisation
-  G = creeGrille (t);
+  G = creeGrille (t, 0);
   randomGrille (G, t, nb_col);
   afficheGrille (G, t);
   
-  ColorCode **ctrl = creeGrille(t);
-  connexions(ctrl, G,  t);
+  ColorCode **ctrl = creeGrille(t, -1);
+  
+ /* for(int a = 0 ; a< t ;a++){
+      for(int b = 0 ; b < t ; b++){//reset grille connexions
+        ctrl[a][b] = -1;
+      }
+    }*/
+  
+  connexions(ctrl, G,  t, 0, 0);
 
 
 
@@ -181,8 +190,8 @@ void play (int t, int nb_col, int n){
     printf("\n");
     
     
-    for(int k = 0 ; k < MAX_COLORS ; k++){
-      afficheCouleur(MAX_COLORS - k-1, k, c);
+    for(int k = 0 ; k < nb_col ; k++){
+      afficheCouleur(nb_col - k-1, k, c);
       c++;
       printf(" ");
     }
@@ -203,13 +212,20 @@ void play (int t, int nb_col, int n){
     
      
     
-    
-    propagate(G, t, res);
-    connexions(ctrl, G,  t);
+    if(res != ancienRes)
+      propagate(G, t, res);
+    connexions(ctrl, G,  t, 0, 0);
     
     afficheGrille(G, t);
-    //printf("\n===================================================\n");
-   // afficheGrille(ctrl, t);
+    printf("\n===================================================\n");
+    afficheGrille(ctrl, t);
+    
+    
+    for(int a = 0 ; a< t ;a++){
+      for(int b = 0 ; b < t ; b++){//reset grille connexions
+        ctrl[a][b] = -1;
+      }
+    }
     
     
     ancienRes = res;
@@ -223,16 +239,12 @@ void play (int t, int nb_col, int n){
   
   
   
-  void connexions(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
+  void connexions(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille, int ligne, int colonne){
     
-     for(int a = 0 ; a< taille ;a++){
-      for(int b = 0 ; b < taille ; b++){
-        Mcontrole[a][b] = 0;
-      }
-    }
+     
     
-    ColorCode couleurr = GrilleJeu[0][0];
-    controle_rec(Mcontrole, GrilleJeu, taille, couleurr, 0, 0);
+    ColorCode couleurr = GrilleJeu[ligne][colonne];
+    controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne);
     
   }
 
@@ -243,23 +255,23 @@ void play (int t, int nb_col, int n){
       
     else{
       
-        Mcontrole[ligne][colonne] = 1;
+        Mcontrole[ligne][colonne] = couleurr;
         //printf("case (%d, %d) sous controle\n", ligne, colonne);
   
         //haut :
-        if(ligne != 0 && Mcontrole[ligne-1][colonne] == 0)
+        if(ligne != 0 && Mcontrole[ligne-1][colonne] != couleurr)
           controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne-1, colonne);
   
         //bas :
-        if(ligne != taille-1 && Mcontrole[ligne+1][colonne] == 0)
+        if(ligne != taille-1 && Mcontrole[ligne+1][colonne] != couleurr)
           controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne+1, colonne);
   
         //gauche :
-        if(colonne != 0 && Mcontrole[ligne][colonne-1] == 0)
+        if(colonne != 0 && Mcontrole[ligne][colonne-1] != couleurr)
           controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne-1);
   
         //droite :
-        if(colonne != taille-1 && Mcontrole[ligne][colonne+1] == 0)
+        if(colonne != taille-1 && Mcontrole[ligne][colonne+1] != couleurr)
           controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne+1);
     }
 }
@@ -279,10 +291,10 @@ void play (int t, int nb_col, int n){
     
     
     //allouer la matrice booléenne de cases visités : 
-    int ** P = creeGrille(taille);
+    int ** P = creeGrille(taille, 0);
     
     //allouer la matrice booléenne de cases connectées à celle en haut à gauche : 
-    int ** C = creeGrille(taille);
+    int ** C = creeGrille(taille, 0);
     
     
     //le robot commence en haut à gauche
@@ -384,7 +396,7 @@ void play (int t, int nb_col, int n){
 
 
   // initialisation
-  G = creeGrille (t);
+  G = creeGrille (t, 0);
   randomGrille (G, t, nb_col);
   afficheGrille (G, t);
 
@@ -459,7 +471,7 @@ int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit &&
 
   //botPlay(TAILLE, NB_COLORS, NB_ESSAIS);
   
- play(TAILLE, NB_COLORS, NB_ESSAIS);
+  play(TAILLE, NB_COLORS, NB_ESSAIS);
 
 
 
