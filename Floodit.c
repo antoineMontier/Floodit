@@ -30,7 +30,7 @@ void play (int, int, int);                                                // A T
 void connexions(ColorCode ** ,ColorCode ** , int , int, int);
 void controle_rec(ColorCode ** ,ColorCode ** , int , ColorCode , int , int);
 void frontieres(ColorCode **, ColorCode **, int );
-int* nbCouleurAnnexables(ColorCode** , int , int );
+int* nbCouleurAnnexables(ColorCode** , int , int, int, int );
 int maximum(int *, int );
 void playVSbot(int , int , int );
 int nbCasesSousControle(ColorCode**, int, int);
@@ -179,7 +179,7 @@ void play (int t, int nb_col, int n){
     
   connexions(ctrl, G,  t, 0, 0);
   frontieres(ctrl, G, t);
-  int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+  int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col, 0, 0);
   printf("jouer %d (%d connexions)", maximum(annexables, nb_col), annexables[maximum(annexables, nb_col)] );
 
 
@@ -221,7 +221,7 @@ void play (int t, int nb_col, int n){
       
     connexions(ctrl, G,  t, 0, 0);
     frontieres(ctrl, G, t);
-    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col, 0, 0);
     
     afficheGrille(G, t);
   //  printf("\n===================================================\n");
@@ -366,20 +366,21 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
     detruitGrille(&comptee, taille);
   }
   
-  int* nbCouleurAnnexables(ColorCode** Mcontrole, int taille, int nb_couleurs){
+  
+  int* nbCouleurAnnexables(ColorCode** Mcontrole, int taille, int nb_couleurs, int x, int y){
     
     int *res;
     
     res = malloc(nb_couleurs*sizeof(int));//allouer le tableau résultat
     
     for(int i = 0 ; i < nb_couleurs ; i++){//initialiser le tableau résultat
-      (*res) = 0;
+      *(res+i) = 0;
     }
     
     for(int ligne = 0 ;ligne < taille ; ligne++){
       for(int colonne = 0 ; colonne < taille ; colonne++){
         
-        if(Mcontrole[ligne][colonne] != -1 && Mcontrole[ligne][colonne] != Mcontrole[0][0]){
+        if(Mcontrole[ligne][colonne] != -1 && Mcontrole[ligne][colonne] != Mcontrole[x][y]){
           res[Mcontrole[ligne][colonne]]++;
         }
         
@@ -388,6 +389,105 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
     
     return res;
   }
+  
+  
+  
+  
+
+  void coupEnAvance(ColorCode**Mjeu, ColorCode** Mcontrole, int taille, int nb_couleurs){
+    
+    int*coul = malloc(nb_couleurs*sizeof(int));
+    for(int  i = 0 ; i < nb_couleurs ; i++)       //tableau résultat initialisé
+      coul[i] = 0;
+    
+    
+    ColorCode**copieJeu = creeGrille(taille, 0);
+    ColorCode**copieControle = creeGrille(taille, 0);
+    
+    //jouer chaque couleure(différente de la couleure en cours) et regarder à chaque fois le nb de couleur max a annexer 
+    for(ColorCode couleur = 0 ; couleur < nb_couleurs ; couleur++){
+      if(couleur != Mjeu[0][0]){
+        
+        
+        for(int i = 0 ; i < taille ; i++){
+          for(int j = 0 ; j < taille ;j++){     //reinitialiser les matrices de controle avant de la modifier
+            copieJeu[i][j] = Mjeu[i][j];
+            copieControle[i][j] = 0;
+          }
+        }
+        
+        connexions(copieControle, copieJeu,  taille, 0, 0);
+        frontieres(copieControle, copieJeu, taille);
+        propagate(copieJeu, taille, couleur);
+        
+        frontieres(copieControle, copieJeu, taille);
+        int * annexables =  nbCouleurAnnexables(copieControle,  taille,  nb_couleurs, 0, 0);
+        coul[maximum(annexables, nb_couleurs)]++;
+      }
+    }
+    
+    
+    for(int i = 0 ; i < nb_couleurs ; i++)
+      printf("%d ", coul[i]);
+    
+    
+    
+    
+    free(coul);
+    detruitGrille(&copieControle, taille);
+    detruitGrille(&copieJeu, taille);
+    
+    
+    /*
+    ColorCode**calc = creeGrille(taille, -1);
+    
+    for(int i = 0 ; i < taille ; i++){
+      for(int j = 0 ; j < taille ;j++){     //copier la matrice de controle avant de la modifier
+        calc[i][j] = Mcontrole[i][j];
+      }
+    }
+    frontieres(calc, Mjeu, taille);
+    int * annexables =  nbCouleurAnnexables(Mcontrole, taille, nb_couleurs, 0, 0);
+    ColorCode**visite = creeGrille(taille, 0);//matrice booleenne qui indique si la case a été comptée :
+    for(int i = 0 ; i < taille ; i++){
+      for(int j = 0 ; j < taille ;j++){     //copier la matrice de controle avant de la modifier
+        if(calc[i][j] != -1)
+          visite[i][j] = 1;
+      }
+    }
+    
+    
+    for(int i = 0 ; i < taille ; i++){
+      for(int j = 0 ; j < taille ; j++){
+        if(calc[i][j] != -1 && Mcontrole[i][j] == -1)
+          calc[i][j] = 1;
+        else
+          calc[i][j] = -1;
+      }
+    }
+    
+    //ici calc a un 1 pour une zone frontalière et un -1 pour une zone controlée ou non controlée et non frontalière
+    //et visite a 1 pour toutes les zones frontalières (déjà comptées dans annexable) ainsi que pour les zones sous controle
+    
+    for(int i = 0 ; i < taille ; i++){
+      for(int j = 0 ; j < taille ; j++){
+        if(calc[i][j] == 1){
+          
+          
+        }
+      }
+    }
+
+    afficheGrille(calc, taille);
+    
+    
+    
+    
+    detruitGrille(&calc, taille);
+    
+    */
+  }
+  
   
   int maximum(int * tab, int size){
     int index = 0;
@@ -522,7 +622,7 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
   ColorCode **ctrl = creeGrille(t, -1);
   connexions(ctrl, G,  t, 0, 0);
   frontieres(ctrl, G, t);
-  int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+  int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col, 0, 0);
   couleurselectionnee = maximum(annexables, nb_col);
 
 
@@ -555,7 +655,7 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
 
     connexions(ctrl, G,  t, 0, 0);
     frontieres(ctrl, G, t);
-    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col, 0, 0);
     
     afficheGrille(G, t);
     //printf("\n===================================================\n");
@@ -644,7 +744,11 @@ void playVSbot(int t, int nb_col, int n){
       printf("\n\nvos résultats sont identiques au robot");
     
     printf("\n\nVotre grille (%d cases sous contrôle) :\n", nbCasesCtrlPlay); //afficher les 2 grilles
+    
     afficheGrille(Gplay, t);
+
+
+ coupEnAvance(Gbot, ctrl, t, nb_col);
 
     
     //afficher les controles
@@ -685,7 +789,7 @@ void playVSbot(int t, int nb_col, int n){
     //robot fait son choix
     connexions(ctrl, Gbot,  t, 0, 0);
     frontieres(ctrl, Gbot, t);
-    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);// le robot crée ses grilles intelligentes
+    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col, 0, 0);// le robot crée ses grilles intelligentes
     couleurBot = maximum(annexables, nb_col);
     
     printf("\nle robot joue : %d\n\n========================================\n\n", couleurBot);
@@ -778,11 +882,11 @@ void playVSbot(int t, int nb_col, int n){
 int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit && ./floodit */
 
 
-  //botPlay(TAILLE, NB_COLORS, NB_ESSAIS);
+  //botPlay(20, 5, 50);
   
   //play(TAILLE, NB_COLORS, NB_ESSAIS);
 
-  playVSbot(20, 4, 50);
+  playVSbot(12, 4, 50);
 
 
   return 0;
