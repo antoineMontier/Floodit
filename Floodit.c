@@ -29,7 +29,7 @@ void propagate_rec (ColorCode **, int, ColorCode, ColorCode, int, int);   // OK
 void play (int, int, int);                                                // A TERMINER
 void connexions(ColorCode ** ,ColorCode ** , int , int, int);
 void controle_rec(ColorCode ** ,ColorCode ** , int , ColorCode , int , int);
-
+void frontieres(ColorCode **, ColorCode **, int );
 
 
 // implementations    symbol  background  lettre
@@ -144,11 +144,6 @@ void propagate_rec (ColorCode ** M, int t, ColorCode ancien, ColorCode nouveau, 
 }
 
 
-
-
-
-
-
 //            matrice grille   taille  couleure desiree
 void propagate (ColorCode ** M, int n, ColorCode c){    //colorier en c toutes les cases de la même couleur que la case en haut à gauche
   //propager le controle à toutes les cellules de même couleurs adjacentes au cellules sous control
@@ -215,6 +210,7 @@ void play (int t, int nb_col, int n){
     if(res != ancienRes)
       propagate(G, t, res);
     connexions(ctrl, G,  t, 0, 0);
+    frontieres(ctrl, G, t);
     
     afficheGrille(G, t);
     printf("\n===================================================\n");
@@ -275,6 +271,72 @@ void play (int t, int nb_col, int n){
           controle_rec(Mcontrole, GrilleJeu, taille, couleurr, ligne, colonne+1);
     }
 }
+
+
+void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
+  
+  //stocker la couleure de controle :
+  ColorCode coulcontrole = GrilleJeu[0][0];
+  
+  //matrice boleenne des cases visitées
+  ColorCode **comptee = creeGrille(taille, 0);
+  
+  
+  //première boucle : détecter les cellules frontalieres à la zone de controle
+  
+  for(int ligne = 0 ;ligne < taille ; ligne++){
+      for(int colonne = 0 ; colonne < taille ; colonne++){
+        
+        //ajouter les 4 cases alentours :
+        
+        //haut :
+        if(ligne != 0 && comptee[ligne-1][colonne] == 0 && Mcontrole[ligne][colonne] == coulcontrole){
+          comptee[ligne-1][colonne] = 1;  //compter la case comme visitée 
+          Mcontrole[ligne-1][colonne]  = GrilleJeu[ligne-1][colonne];     
+        }
+        
+        //bas :
+        if(ligne != taille-1 && comptee[ligne+1][colonne] == 0 && Mcontrole[ligne][colonne] == coulcontrole){
+          comptee[ligne+1][colonne] = 1;  //compter la case comme visitée
+          Mcontrole[ligne+1][colonne]  = GrilleJeu[ligne+1][colonne];
+          
+        }
+        
+        //gauche :
+        if(colonne != 0 && comptee[ligne][colonne-1] == 0 && Mcontrole[ligne][colonne] == coulcontrole){
+          comptee[ligne][colonne-1] = 1;  //compter la case comme visitée
+          Mcontrole[ligne][colonne-1]  = GrilleJeu[ligne][colonne-1];
+          
+        }
+        
+        //droite :
+        if(colonne != taille-1 && comptee[ligne][colonne+1] == 0 && Mcontrole[ligne][colonne] == coulcontrole){
+          comptee[ligne][colonne+1] = 1;  //compter la case comme visitée
+          Mcontrole[ligne][colonne+1]  = GrilleJeu[ligne][colonne+1];
+          
+        }
+      }
+    }
+    
+    //ici les cases alentoures à celles sous controles donc ajoutées à la matrice de controles
+    //maintenant, il faut regarder la connexion des cases ajoutées...
+    
+    //une case frontière est caractérisée par comptee[i][j] = 1 et GrilleJeu[i][j] != coulcontrole
+    
+    for(int ligne = 0 ;ligne < taille ; ligne++){
+      for(int colonne = 0 ; colonne < taille ; colonne++){
+        
+        if(comptee[ligne][colonne] == 1 && GrilleJeu[ligne][colonne] != coulcontrole){
+          connexions(Mcontrole, GrilleJeu, taille, ligne, colonne);
+        }
+        
+      }
+    }
+    //ici la matrice de controle affiche toutes les cases annexables en jouant leur couleur !
+  }
+  
+  
+
   
   
   
@@ -418,7 +480,7 @@ void play (int t, int nb_col, int n){
     
     printf("exit : -1 // il reste %d essai(s)\n", n-i);
     
-    res = (res + 1) % (MAX_COLORS);
+    res = (res + 1) % (nb_col);
     
     printf("couleure %d \n", res);
   
