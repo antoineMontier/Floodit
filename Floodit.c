@@ -30,6 +30,8 @@ void play (int, int, int);                                                // A T
 void connexions(ColorCode ** ,ColorCode ** , int , int, int);
 void controle_rec(ColorCode ** ,ColorCode ** , int , ColorCode , int , int);
 void frontieres(ColorCode **, ColorCode **, int );
+int* nbCouleurAnnexables(ColorCode** , int , int );
+int maximum(int *, int );
 
 
 // implementations    symbol  background  lettre
@@ -172,21 +174,24 @@ void play (int t, int nb_col, int n){
         ctrl[a][b] = -1;
       }
     }*/
-  
+    
   connexions(ctrl, G,  t, 0, 0);
-
-
+  frontieres(ctrl, G, t);
+  int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+  printf("jouer %d (%d connexions)", maximum(annexables, nb_col), annexables[maximum(annexables, nb_col)] );
 
 
   // debut des interactions
   for (int i = 0; i < n; ++i){
     
+    //afficher les controles
     char c = '0';
     printf("\n");
-    
-    
-    for(int k = 0 ; k < nb_col ; k++){
-      afficheCouleur(nb_col - k-1, k, c);
+    afficheCouleur(WHITE, 0, c);
+    c++;
+    printf(" ");
+    for(int k = 1 ; k < nb_col ; k++){
+      afficheCouleur(0, k, c);
       c++;
       printf(" ");
     }
@@ -195,7 +200,7 @@ void play (int t, int nb_col, int n){
     
     do{
       scanf("%d", &res);
-    }while(res < -1 || res >= MAX_COLORS);
+    }while(res < -1 || res >= nb_col);
 
 
 
@@ -209,13 +214,17 @@ void play (int t, int nb_col, int n){
     
     if(res != ancienRes)
       propagate(G, t, res);
+      
     connexions(ctrl, G,  t, 0, 0);
     frontieres(ctrl, G, t);
+    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
     
     afficheGrille(G, t);
-    printf("\n===================================================\n");
-    afficheGrille(ctrl, t);
+  //  printf("\n===================================================\n");
+   // afficheGrille(ctrl, t);
     
+    printf("jouer %d (%d connexions)", maximum(annexables, nb_col), annexables[maximum(annexables, nb_col)] );
+ 
     
     for(int a = 0 ; a< t ;a++){
       for(int b = 0 ; b < t ; b++){//reset grille connexions
@@ -335,8 +344,43 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
     //ici la matrice de controle affiche toutes les cases annexables en jouant leur couleur !
   }
   
+  int* nbCouleurAnnexables(ColorCode** Mcontrole, int taille, int nb_couleurs){
+    
+    int *res;
+    
+    res = malloc(nb_couleurs*sizeof(int));//allouer le tableau résultat
+    
+    for(int i = 0 ; i < nb_couleurs ; i++){//initialiser le tableau résultat
+      (*res) = 0;
+    }
+    
+    for(int ligne = 0 ;ligne < taille ; ligne++){
+      for(int colonne = 0 ; colonne < taille ; colonne++){
+        
+        if(Mcontrole[ligne][colonne] != -1 && Mcontrole[ligne][colonne] != Mcontrole[0][0]){
+          res[Mcontrole[ligne][colonne]]++;
+        }
+        
+      }
+    }
+    
+    return res;
+  }
   
-
+  int maximum(int * tab, int size){
+    int index = 0;
+    int r = tab[0];
+    
+    for(int i = 0 ; i < size ; i++){
+      if(tab[i]>r){
+        r = tab[i];
+        index = i;
+      }
+    }
+    
+    return index;
+    
+  }
   
   
   
@@ -453,7 +497,7 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
   
   void botPlay(int t, int nb_col, int n){
   ColorCode ** G;
-  int res = 0;
+  int couleurselectionnee = 0;
   int ancienRes = 0;
 
 
@@ -461,6 +505,13 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
   G = creeGrille (t, 0);
   randomGrille (G, t, nb_col);
   afficheGrille (G, t);
+  
+  
+  ColorCode **ctrl = creeGrille(t, -1);
+  connexions(ctrl, G,  t, 0, 0);
+  frontieres(ctrl, G, t);
+  int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+  couleurselectionnee = maximum(annexables, nb_col);
 
 
   // debut des interactions
@@ -470,29 +521,50 @@ void frontieres(ColorCode ** Mcontrole, ColorCode **GrilleJeu, int taille){
     //afficher les controles
     char c = '0';
     printf("\n");
-    for(int k = 0 ; k < MAX_COLORS ; k++){
-      afficheCouleur(MAX_COLORS - k-1, k, c);
+    afficheCouleur(WHITE, 0, c);
+    c++;
+    printf(" ");
+    for(int k = 1 ; k < nb_col ; k++){
+      afficheCouleur(0, k, c);
       c++;
       printf(" ");
     }
     
-    
+        propagate(G, t, couleurselectionnee);
+
     
     printf("exit : -1 // il reste %d essai(s)\n", n-i);
     
-    res = (res + 1) % (nb_col);
-    
-    printf("couleure %d \n", res);
+    printf("couleure %d \n", couleurselectionnee);
   
     //sleep(1);   
     
-
-    if(res != ancienRes)
-      propagate(G, t, res);
     
 
+    connexions(ctrl, G,  t, 0, 0);
+    frontieres(ctrl, G, t);
+    int * annexables =  nbCouleurAnnexables(ctrl,  t,  nb_col);
+    
     afficheGrille(G, t);
-    ancienRes = res;
+    //printf("\n===================================================\n");
+    //afficheGrille(ctrl, t);
+    
+    couleurselectionnee = maximum(annexables, nb_col);
+    printf("couleure %d \n", couleurselectionnee);
+
+ 
+    
+    for(int a = 0 ; a< t ;a++){
+      for(int b = 0 ; b < t ; b++){//reset grille connexions
+        ctrl[a][b] = -1;
+      }
+    }
+    
+    
+    
+    
+    
+    ancienRes = couleurselectionnee;
 
     if (isFlooded(G,t)){
       printf("GAGNE!\n");
