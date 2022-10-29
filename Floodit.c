@@ -50,13 +50,13 @@ ColorCode ** creeGrille(int n, int val){//n est la taille de la matrice (n*n)
   M = malloc(n*sizeof(int*));
 
 //creer chaque ligne de la matrice
-  for(int i = 0 ; i <= n ; i++){
+  for(int i = 0 ; i < n ; i++){
     M[i] = malloc(n*sizeof(int));
   }
 
 //initialiser chaque ligne
-  for(int i = 0 ; i <= n ; i++){
-    for(int j = 0 ; j <= n ; j++){
+  for(int i = 0 ; i < n ; i++){
+    for(int j = 0 ; j < n ; j++){
       M[i][j] = val;
     }
   }
@@ -786,7 +786,7 @@ int main (){/* gcc -c -Wall -Wextra floodit.c && gcc floodit.o -lm -o floodit &&
 
   //play(TAILLE, NB_COLORS, NB_ESSAIS);
 
-  playVSbot(12, 6, 50);
+  playVSbot(20, 4, 50);
 
 
   return 0;
