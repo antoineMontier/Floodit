@@ -11,7 +11,7 @@ DEP = $(addprefix build/,$(SRC:.c=.d))
 CC = gcc
 
 # nom de l'executable
-EXE = lll
+EXE = Floodit
 
 # flags de compilation (CFLAGS) et d'edition de liens (LDFLAGS)
 CFLAGS += -Wall -Wextra -MMD -g -O2
